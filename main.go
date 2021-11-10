@@ -19,7 +19,14 @@ type options struct {
 }
 
 func start(opts options) error {
-	ssh.Handle(func(s ssh.Session) {
+	server := &ssh.Server{Addr: opts.Addr}
+
+	if _, err := os.Stat(opts.HostKey); err == nil {
+		hostKeyFile := ssh.HostKeyFile(opts.HostKey)
+		server.SetOption(hostKeyFile)
+	}
+
+	server.Handle(func(s ssh.Session) {
 		_, _, isPty := s.Pty()
 		if isPty {
 			addr := net.JoinHostPort(s.User(), "23")
@@ -49,15 +56,8 @@ func start(opts options) error {
 		}
 	})
 
-	var hostKey ssh.Option
-	if _, err := os.Stat(opts.HostKey); err == nil {
-		hostKey = ssh.HostKeyFile(opts.HostKey)
-	} else {
-		hostKey = func(srv *ssh.Server) error { return nil }
-	}
-
 	fmt.Printf("Starting ssh server on %s\n", opts.Addr)
-	return ssh.ListenAndServe(opts.Addr, nil, hostKey)
+	return server.ListenAndServe()
 }
 
 func main() {
