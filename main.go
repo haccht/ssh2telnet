@@ -7,8 +7,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/LeeEirc/tclientlib"
 	"github.com/gliderlabs/ssh"
+	"github.com/ziutek/telnet"
+
 	flags "github.com/jessevdk/go-flags"
 )
 
@@ -24,7 +25,7 @@ func start(opts options) error {
 			addr := net.JoinHostPort(s.User(), "23")
 			fmt.Printf("Connecting to %s\n", addr)
 
-			client, err := tclientlib.Dial("tcp", addr, &tclientlib.Config{})
+			conn, err := telnet.Dial("tcp", addr)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to connect to %s.\n", addr)
 				s.Exit(1)
@@ -32,11 +33,11 @@ func start(opts options) error {
 				sigChan := make(chan struct{}, 1)
 
 				go func() {
-					_, _ = io.Copy(s, client)
+					_, _ = io.Copy(s, conn)
 					sigChan <- struct{}{}
 				}()
 				go func() {
-					_, _ = io.Copy(client, s)
+					_, _ = io.Copy(conn, s)
 					sigChan <- struct{}{}
 				}()
 
