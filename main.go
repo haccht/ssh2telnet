@@ -17,8 +17,8 @@ import (
 type options struct {
 	Addr           string `short:"a" long:"addr" description:"Address to listen on" default:":2222"`
 	HostKey        string `short:"k" long:"key" description:"Path to the host key"`
-	LoginPrompt    string `long:"login-prompt" description:"Login prompt" default:"login: "`
-	PasswordPrompt string `long:"password-prompt" description:"Password prompt" default:"Password: "`
+	LoginPrompt    string `long:"login-prompt" description:"Login prompt" default:"\"login: \""`
+	PasswordPrompt string `long:"password-prompt" description:"Password prompt" default:"\"Password: \""`
 }
 
 func start(opts options) error {
