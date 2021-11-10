@@ -50,7 +50,7 @@ func start(opts options) error {
 
 	var hostKey ssh.Option
 	if _, err := os.Stat(opts.HostKey); err == nil {
-		hostKey = ssh.HostKeyFile("id_rsa")
+		hostKey = ssh.HostKeyFile(opts.HostKey)
 	} else {
 		hostKey = func(srv *ssh.Server) error { return nil }
 	}
