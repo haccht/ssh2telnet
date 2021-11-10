@@ -13,7 +13,7 @@ import (
 )
 
 type options struct {
-	Addr    string `short:"a" long:"addr" description:"Address to listen on" default:"2222"`
+	Addr    string `short:"a" long:"addr" description:"Address to listen on" default:":2222"`
 	HostKey string `short:"k" long:"key"  description:"Path to the host key"`
 }
 
@@ -62,6 +62,9 @@ func start(opts options) error {
 func main() {
 	var opts options
 	if _, err := flags.Parse(&opts); err != nil {
+		if fe, ok := err.(*flags.Error); ok && fe.Type == flags.ErrHelp {
+			os.Exit(0)
+		}
 		log.Fatal(err)
 	}
 
