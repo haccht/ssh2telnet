@@ -1,8 +1,7 @@
 # ssh2telnet
-Proxy ssh connection to telnet.
+Proxy ssh connection into telnet.
 
 ## Usage
-
 
 ```
 $ ssh2telnet -h
@@ -10,7 +9,7 @@ Usage:
   ssh2telnet [OPTIONS]
 
 Application Options:
-  -a, --addr= Address to listen on (default: 2222)
+  -a, --addr= Address to listen on (default: :2222)
   -k, --key=  Path to the host key
 
 Help Options:
@@ -28,7 +27,7 @@ Connect the ssh server from the other terminal.
 The given username will be interpeted into the hostname you want to access.
 
 ```
-$ ssh localhost -p 2223 -l 192.168.1.1
+$ ssh localhost -p 2222 -l 192.168.1.1
 
 
 User Access Verification
