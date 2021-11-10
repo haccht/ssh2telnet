@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strings"
 
 	"github.com/gliderlabs/ssh"
 	"github.com/ziutek/telnet"
@@ -14,8 +15,10 @@ import (
 )
 
 type options struct {
-	Addr    string `short:"a" long:"addr" description:"Address to listen on" default:":2222"`
-	HostKey string `short:"k" long:"key"  description:"Path to the host key"`
+	Addr           string `short:"a" long:"addr" description:"Address to listen on" default:":2222"`
+	HostKey        string `short:"k" long:"key" description:"Path to the host key"`
+	LoginPrompt    string `long:"login-prompt" description:"Login prompt" default:"login: "`
+	PasswordPrompt string `long:"password-prompt" description:"Password prompt" default:"Password: "`
 }
 
 func start(opts options) error {
@@ -26,10 +29,23 @@ func start(opts options) error {
 		server.SetOption(hostKeyFile)
 	}
 
+	var username, password, hostname string
+	passwordAuth := ssh.PasswordAuth(func(ctx ssh.Context, s string) bool {
+		t := strings.SplitN(ctx.User(), "@", 2)
+		if len(t) != 2 {
+			return false
+		}
+
+		username, hostname = t[0], t[1]
+		password = s
+		return true
+	})
+	server.SetOption(passwordAuth)
+
 	server.Handle(func(s ssh.Session) {
 		_, _, isPty := s.Pty()
 		if isPty {
-			addr := net.JoinHostPort(s.User(), "23")
+			addr := net.JoinHostPort(hostname, "23")
 			fmt.Printf("Connecting to %s\n", addr)
 
 			conn, err := telnet.Dial("tcp", addr)
@@ -37,6 +53,11 @@ func start(opts options) error {
 				fmt.Fprintf(os.Stderr, "Unable to connect to %s.\n", addr)
 				s.Exit(1)
 			} else {
+				_, err = conn.ReadUntil(opts.LoginPrompt)
+				conn.Write([]byte(fmt.Sprintf("%s\n", username)))
+				_, err = conn.ReadUntil(opts.PasswordPrompt)
+				conn.Write([]byte(fmt.Sprintf("%s\n", password)))
+
 				sigChan := make(chan struct{}, 1)
 
 				go func() {
