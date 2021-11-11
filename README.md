@@ -35,6 +35,12 @@ Now the proxied telnet session is attached to the target host.
 $ ssh localhost -p 2222 -l 192.168.1.1
 
 
+User Access Verification
+
+Username: vagrant
+Password:
+
+
 RP/0/RSP0/CPU0:R1#show clock
 Thu Nov 11 00:00:00.000 JST
 00:00:00:000 JST Thu Nov 11 2021

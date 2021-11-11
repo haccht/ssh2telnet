@@ -5,9 +5,11 @@ builds:
 - env:
   - CGO_ENABLED=0
 archives:
-- replacements:
-    linux: Linux
-    amd64: x86_64
+  - replacements:
+      darwin: Darwin
+      linux: Linux
+      386: i386
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
