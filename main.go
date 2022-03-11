@@ -30,27 +30,27 @@ func start(opts options) error {
 		server.SetOption(hostKeyFile)
 	}
 
-	var username, password, host string
 	if opts.AutoLogin {
 		passwordAuth := ssh.PasswordAuth(func(ctx ssh.Context, s string) bool {
-			t := strings.SplitN(ctx.User(), "@", 2)
-			if len(t) != 2 {
-				return false
-			}
-
-			username, host = t[0], t[1]
-			password = s
+			ctx.SetValue("password", s)
 			return true
 		})
 		server.SetOption(passwordAuth)
 	}
 
 	server.Handle(func(s ssh.Session) {
+		var username, password, host string
+		if opts.AutoLogin {
+			t := strings.SplitN(s.User(), "@", 2)
+
+			username, host = t[0], t[1]
+			password = s.Context().Value("password").(string)
+		} else {
+			host = s.User()
+		}
+
 		_, _, isPty := s.Pty()
 		if isPty {
-			if host == "" {
-				host = s.User()
-			}
 
 			addr := net.JoinHostPort(host, "23")
 			fmt.Printf("Connecting to %s\n", addr)
@@ -59,26 +59,30 @@ func start(opts options) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to connect to %s.\n", addr)
 				s.Exit(1)
-			} else {
-				if opts.AutoLogin {
-					_, err = conn.ReadUntil(opts.LoginPrompt)
-					conn.Write([]byte(fmt.Sprintf("%s\n", username)))
-					_, err = conn.ReadUntil(opts.PasswordPrompt)
-					conn.Write([]byte(fmt.Sprintf("%s\n", password)))
-				}
-
-				sigChan := make(chan struct{}, 1)
-				go func() {
-					_, _ = io.Copy(s, conn)
-					sigChan <- struct{}{}
-				}()
-				go func() {
-					_, _ = io.Copy(conn, s)
-					sigChan <- struct{}{}
-				}()
-
-				<-sigChan
 			}
+			defer func() {
+				conn.Close()
+				fmt.Printf("Connection to %s closed\n", addr)
+			}()
+
+			if opts.AutoLogin {
+				_, err = conn.ReadUntil(opts.LoginPrompt)
+				conn.Write([]byte(fmt.Sprintf("%s\n", username)))
+				_, err = conn.ReadUntil(opts.PasswordPrompt)
+				conn.Write([]byte(fmt.Sprintf("%s\n", password)))
+			}
+
+			sigChan := make(chan struct{}, 1)
+			go func() {
+				_, _ = io.Copy(s, conn)
+				sigChan <- struct{}{}
+			}()
+			go func() {
+				_, _ = io.Copy(conn, s)
+				sigChan <- struct{}{}
+			}()
+
+			<-sigChan
 		} else {
 			fmt.Fprintf(os.Stderr, "No PTY requested.\n")
 			s.Exit(1)
