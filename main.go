@@ -42,6 +42,11 @@ func start(opts options) error {
 		var username, password, host string
 		if opts.AutoLogin {
 			t := strings.SplitN(s.User(), "@", 2)
+			if len(t) != 2 {
+				fmt.Fprintf(os.Stderr, "Unable to parse username from '%s'.\n", s.User())
+				s.Exit(1)
+				return
+			}
 
 			username, host = t[0], t[1]
 			password = s.Context().Value("password").(string)
@@ -59,6 +64,7 @@ func start(opts options) error {
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Unable to connect to %s.\n", addr)
 				s.Exit(1)
+				return
 			}
 			defer func() {
 				conn.Close()
